@@ -31,8 +31,7 @@ class Controller extends ControllerAdmin
     {
         Piwik::checkUserHasSuperUserAccess();
 
-        $mapping = Common::getRequestVar('mapping', '[]', 'string');
-        $mapping = json_decode($mapping, true);
+        $mapping = Common::getRequestVar('mapping', [], 'json');
 
         if (!is_array($mapping)) {
             $mapping = [];

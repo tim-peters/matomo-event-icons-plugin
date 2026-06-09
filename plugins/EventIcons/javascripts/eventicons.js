@@ -2,16 +2,26 @@
     var MAPPING = window.matomoEventIcons || {};
     var BASE_URL = window.matomoEventIconsBaseUrl || 'plugins/EventIcons/icons/material/';
 
-    if (Object.keys(MAPPING).length === 0) {
-        return;
+    function getKeyFromCategoryActionText(text) {
+        var parts = text.split(' - ');
+        if (parts.length < 2) return null;
+        var category = parts[0].trim();
+        var action = parts[1].trim();
+        if (!category || !action) return null;
+        return category + '/' + action;
     }
 
-    function replaceIconsInNode(root) {
-        if (!root || !root.querySelectorAll) return;
+    function replaceIcon(img, key) {
+        var iconFile = MAPPING[key];
+        if (iconFile) {
+            img.src = BASE_URL + iconFile + '.svg';
+            img.setAttribute('data-ei-replaced', '1');
+            img.setAttribute('data-ei-key', key);
+        }
+    }
 
+    function replaceVisitorLogIcons(root) {
         var images = root.querySelectorAll('.action-list-action-icon.event');
-        if (!images.length) return;
-
         for (var i = 0; i < images.length; i++) {
             var img = images[i];
             if (img.getAttribute('data-ei-replaced')) continue;
@@ -23,19 +33,37 @@
             var eventSpan = li.querySelector('.truncated-text-line.event');
             if (!eventSpan) continue;
 
-            var text = eventSpan.textContent.trim();
-            var parts = text.split(' - ');
-            if (parts.length < 2) continue;
-
-            var key = parts[0].trim() + '/' + parts[1].trim();
-            var iconFile = MAPPING[key];
-
-            if (iconFile) {
-                img.src = BASE_URL + iconFile + '.svg';
-                img.setAttribute('data-ei-replaced', '1');
-                img.setAttribute('data-ei-key', key);
-            }
+            var key = getKeyFromCategoryActionText(eventSpan.textContent.trim());
+            if (key) replaceIcon(img, key);
         }
+    }
+
+    function replaceLiveWidgetIcons(root) {
+        var liveWidget = document.getElementById('visitsLive');
+        if (!liveWidget) return;
+
+        var container = (root === document || root === liveWidget || liveWidget.contains(root))
+            ? liveWidget : null;
+        if (!container) return;
+
+        var images = container.querySelectorAll('img.iconPadding[src*="event."]');
+        for (var i = 0; i < images.length; i++) {
+            var img = images[i];
+            if (img.getAttribute('data-ei-replaced')) continue;
+
+            var title = img.getAttribute('title') || '';
+            var match = title.match(/^[^ ]+ (.+?) - (.+?)(?: -|$)/);
+            if (!match) continue;
+
+            var key = match[1].trim() + '/' + match[2].trim();
+            replaceIcon(img, key);
+        }
+    }
+
+    function replaceIconsInNode(root) {
+        if (!root || !root.querySelectorAll) return;
+        replaceVisitorLogIcons(root);
+        replaceLiveWidgetIcons(root);
     }
 
     function onReady() {
