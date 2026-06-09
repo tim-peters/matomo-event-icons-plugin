@@ -31,7 +31,7 @@ class EventIcons extends Plugin
         }
 
         $out .= 'window.matomoEventIcons = ' . json_encode($lookup) . ";\n";
-        $out .= 'window.matomoEventIconsBaseUrl = "plugins/EventIcons/icons/material/";' . "\n";
+        $out .= 'window.matomoEventIconsBaseUrl = "index.php?module=EventIcons&action=icon&name=";' . "\n";
     }
 
     public function getJavaScriptFiles(&$files)

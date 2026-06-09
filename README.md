@@ -9,7 +9,7 @@ Replace generic event icons in Matomo's visitor log and real-time live widget wi
 - Detects existing event types from recent tracking data (last 90 days)
 - **2,100+ Material Design icons** included – searchable picker in the settings
 - Works per website, mapping is global (applied to all sites)
-- Lightweight – uses SVG icons directly, no external dependencies
+- Lightweight – icons are served on-demand from a compact JSON file (~570 KB), no external dependencies
 
 ## Requirements
 
@@ -48,9 +48,29 @@ The plugin source is mounted live at `plugins/EventIcons`. Changes to PHP, Twig,
 docker compose exec matomo sh -c 'rm -rf /var/www/html/tmp/templates_c/* /var/www/html/tmp/assets/* /var/www/html/tmp/cache/*'
 ```
 
-### Adding custom icons
+## Adding custom icons
 
-Place SVG files in `plugins/EventIcons/icons/material/`. The settings page automatically discovers new files on every page load. The icon name (filename without `.svg`) is used as the identifier.
+The plugin bundles 2,100+ Material Design icons, but you can add custom ones:
+
+1. Place your SVG file in `plugins/EventIcons/icons/material/`.
+2. Run the extraction script to rebuild `material-paths.json`:
+   ```bash
+   cd plugins/EventIcons/icons/material
+   python3 -c "
+   import os, json, re
+   paths = {}
+   for f in sorted(os.listdir('.')):
+       if not f.endswith('.svg'): continue
+       name = f[:-4]
+       with open(f) as fh: content = fh.read()
+       m = re.search(r'<svg[^>]*>(.*?)</svg>', content, re.DOTALL)
+       if m: paths[name] = m.group(1).strip()
+   with open('../material-paths.json', 'w') as fh:
+       json.dump(paths, fh, separators=(',', ':'))
+   print(f'Extracted {len(paths)} icons')
+   ```
+3. Delete the individual SVG files (optional – only `material-paths.json` is needed at runtime).
+4. Clear the Matomo cache.
 
 ## License
 

@@ -65,21 +65,47 @@ class Controller extends ControllerAdmin
         return json_encode($data);
     }
 
-    private function getAvailableIcons()
+    public function icon()
     {
-        $iconsDir = __DIR__ . '/icons/material/';
-        $icons = [];
+        Piwik::checkUserHasSuperUserAccess();
 
-        if (is_dir($iconsDir)) {
-            $files = scandir($iconsDir);
-            foreach ($files as $file) {
-                if (pathinfo($file, PATHINFO_EXTENSION) === 'svg') {
-                    $name = pathinfo($file, PATHINFO_FILENAME);
-                    $icons[] = $name;
-                }
-            }
+        $name = Common::getRequestVar('name', '', 'string');
+        $name = preg_replace('/\.svg$/i', '', $name);
+        $name = preg_replace('/[^a-z0-9_\-]/', '', $name);
+        if (!$name) {
+            return $this->jsonResponse(['error' => 'No icon name provided']);
         }
 
+        $paths = $this->loadIconPaths();
+        if (!isset($paths[$name])) {
+            Common::sendHeader('Content-Type: image/svg+xml; charset=utf-8');
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><rect width="24" height="24" fill="#ccc"/></svg>';
+        }
+
+        Common::sendHeader('Content-Type: image/svg+xml; charset=utf-8');
+        Common::sendHeader('Cache-Control: public, max-age=86400');
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' . $paths[$name] . '</svg>';
+    }
+
+    private function loadIconPaths(): array
+    {
+        static $paths = null;
+        if ($paths !== null) {
+            return $paths;
+        }
+        $jsonFile = __DIR__ . '/icons/material-paths.json';
+        if (!file_exists($jsonFile)) {
+            $paths = [];
+            return $paths;
+        }
+        $paths = json_decode(file_get_contents($jsonFile), true) ?: [];
+        return $paths;
+    }
+
+    private function getAvailableIcons(): array
+    {
+        $paths = $this->loadIconPaths();
+        $icons = array_keys($paths);
         sort($icons);
         return $icons;
     }

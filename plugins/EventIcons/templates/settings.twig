@@ -190,7 +190,7 @@
 
         rows.forEach(function (row) {
             var iconHtml = row.icon
-                ? '<img src="plugins/EventIcons/icons/material/' + escapeHtml(row.icon) + '.svg" style="width:16px;height:16px;vertical-align:middle" title="' + escapeHtml(row.icon) + '" />'
+                ? '<img src="index.php?module=EventIcons&action=icon&name=' + escapeHtml(row.icon) + '.svg" style="width:16px;height:16px;vertical-align:middle" title="' + escapeHtml(row.icon) + '" />'
                 : '<span style="color:#999">{{ 'EventIcons_NoIcon'|translate }}</span>';
 
             var badge = row.isNew ? ' <span class="label label-success" style="margin-left:4px">{{ 'EventIcons_NewDetected'|translate }}</span>' : '';
@@ -238,7 +238,7 @@
     function setCellIcon(key, iconName) {
         var $cell = $tbody.find('.icon-cell[data-key="' + key.replace(/"/g, '&quot;') + '"]');
         if ($cell.length) {
-            $cell.html('<img src="plugins/EventIcons/icons/material/' + iconName + '.svg" style="width:16px;height:16px;vertical-align:middle" title="' + iconName + '" />');
+            $cell.html('<img src="index.php?module=EventIcons&action=icon&name=' + iconName + '.svg" style="width:16px;height:16px;vertical-align:middle" title="' + iconName + '" />');
         }
     }
 
@@ -257,7 +257,7 @@
         }
         filtered.forEach(function (name) {
             var $div = $('<div class="eventicons-icon-item" data-icon="' + name + '">');
-            $div.append('<img src="plugins/EventIcons/icons/material/' + name + '.svg" style="width:24px;height:24px;display:block;margin:0 auto 4px" />');
+            $div.append('<img src="index.php?module=EventIcons&action=icon&name=' + name + '.svg" style="width:24px;height:24px;display:block;margin:0 auto 4px" />');
             $div.append('<span style="font-size:10px;word-break:break-all">' + name + '</span>');
             $div.on('click', function () {
                 $('.eventicons-icon-item').removeClass('selected');
