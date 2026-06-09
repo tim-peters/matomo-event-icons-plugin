@@ -1,0 +1,383 @@
+{% extends 'admin.twig' %}
+
+{% block content %}
+<div class="eventicons-settings">
+    <h2 piwik-enriched-headline>{{ title }}</h2>
+    <p>{{ 'EventIcons_AdminDescription'|translate }}</p>
+
+    <div class="card">
+        <div class="card-content">
+            <div class="row">
+                <div class="col s12 m6 l4">
+                    <label for="siteSelect">{{ 'EventIcons_SiteSelection'|translate }}:</label>
+                    <select id="siteSelect" class="browser-default">
+                        <option value="">-- {{ 'General_AllWebsites'|translate }} --</option>
+                        {% for site in sites %}
+                            <option value="{{ site.idsite }}">{{ site.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col s12 m6 l4" style="padding-top:20px">
+                    <button id="loadEventsBtn" class="btn btn-primary">
+                        {{ 'EventIcons_LoadEvents'|translate }}
+                    </button>
+                    <span id="loadStatus" style="margin-left:8px;display:none"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-content">
+            <div class="eventicons-bulk-toolbar" style="margin-bottom:12px;display:none">
+                <label>
+                    <input type="checkbox" id="selectAllCheckbox" />
+                    <span>{{ 'EventIcons_SelectAll'|translate }}</span>
+                </label>
+                <button id="bulkAssignBtn" class="btn btn-secondary" style="margin-left:12px" disabled>
+                    {{ 'EventIcons_BulkAssign'|translate }}
+                </button>
+                <button id="bulkRemoveBtn" class="btn btn-secondary" style="margin-left:8px" disabled>
+                    {{ 'EventIcons_RemoveMapping'|translate }}
+                </button>
+            </div>
+
+            <table id="eventIconsTable" class="table" style="display:none">
+                <thead>
+                    <tr>
+                        <th style="width:32px">
+                            <input type="checkbox" id="selectAllCheckboxHeader" />
+                        </th>
+                        <th>{{ 'EventIcons_EventCategory'|translate }}</th>
+                        <th>{{ 'EventIcons_EventAction'|translate }}</th>
+                        <th style="width:80px">{{ 'EventIcons_Occurrences'|translate }}</th>
+                        <th style="width:140px">{{ 'EventIcons_Icon'|translate }}</th>
+                        <th style="width:40px"></th>
+                    </tr>
+                </thead>
+                <tbody id="eventIconsTbody"></tbody>
+            </table>
+
+            <div id="noEventsMsg" style="display:none">
+                <em>{{ 'EventIcons_NoEventsFound'|translate }}</em>
+            </div>
+
+            <div id="saveSection" style="margin-top:16px;display:none">
+                <button id="saveBtn" class="btn btn-primary">{{ 'EventIcons_Save'|translate }}</button>
+                <span id="saveStatus" style="margin-left:8px;display:none"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="iconPickerModal" class="modal" style="width:700px;max-height:85vh">
+    <div class="modal-content">
+        <h4>{{ 'EventIcons_SelectIcon'|translate }}</h4>
+        <input type="text" id="iconSearch" class="browser-default" placeholder="{{ 'EventIcons_SearchIcons'|translate }}" style="width:100%;margin-bottom:12px;padding:6px" />
+        <div id="iconGrid" class="eventicons-icon-grid"></div>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="modal-close btn btn-secondary">{{ 'General_Cancel'|translate }}</a>
+    </div>
+</div>
+
+<style>
+.eventicons-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+.eventicons-icon-item {
+    text-align: center;
+    padding: 8px 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: border-color 0.15s;
+}
+.eventicons-icon-item:hover {
+    border-color: #4CAF50;
+    background: #f1f8e9;
+}
+.eventicons-icon-item.selected {
+    border-color: #4CAF50;
+    background: #dcedc8;
+}
+.eventicons-icon-item img {
+    display: block;
+    margin: 0 auto 4px;
+    width: 24px;
+    height: 24px;
+}
+</style>
+{% endblock %}
+
+{% block footer %}
+{{ parent() }}
+<script>
+(function () {
+    var currentMapping = {{ mapping|raw }};
+    var iconList = {{ iconList|raw }};
+    var $ = jQuery;
+
+    var $table = $('#eventIconsTable');
+    var $tbody = $('#eventIconsTbody');
+    var $noEvents = $('#noEventsMsg');
+    var $saveSection = $('#saveSection');
+    var $loadStatus = $('#loadStatus');
+    var $saveStatus = $('#saveStatus');
+    var $bulkToolbar = $('.eventicons-bulk-toolbar');
+    var $iconModal = $('#iconPickerModal');
+    var $iconSearch = $('#iconSearch');
+    var $iconGrid = $('#iconGrid');
+    var pendingIconCallback = null;
+
+    function getIconNameFromImg(img) {
+        var src = $(img).attr('src');
+        if (!src) return null;
+        var m = src.match(/\/([^\/]+?)\.svg$/);
+        return m ? m[1] : null;
+    }
+
+    function buildTable(mapping, detected) {
+        var existingKeys = {};
+        mapping.forEach(function (e) { existingKeys[e.key] = e.icon; });
+
+        var rows = [];
+        var seen = {};
+
+        mapping.forEach(function (e) {
+            if (!seen[e.key]) {
+                var parts = e.key.split('/');
+                var cat = parts[0] || '';
+                var act = parts.slice(1).join('/') || '';
+                rows.push({ key: e.key, category: cat, action: act, icon: e.icon, occurrences: '-', isNew: false });
+                seen[e.key] = true;
+            }
+        });
+
+        detected.forEach(function (ev) {
+            if (!seen[ev.key]) {
+                rows.push({ key: ev.key, category: ev.category, action: ev.action, icon: null, occurrences: ev.occurrences, isNew: true });
+                seen[ev.key] = true;
+            } else {
+                var r = rows.find(function (x) { return x.key === ev.key; });
+                if (r && r.occurrences === '-') r.occurrences = ev.occurrences;
+            }
+        });
+
+        renderRows(rows);
+    }
+
+    function escapeHtml(str) {
+        return $('<span>').text(str || '').html();
+    }
+
+    function renderRows(rows) {
+        $tbody.empty();
+
+        if (rows.length === 0) {
+            $table.hide();
+            $noEvents.show();
+            $saveSection.hide();
+            $bulkToolbar.hide();
+            return;
+        }
+
+        $table.show();
+        $noEvents.hide();
+        $saveSection.show();
+        $bulkToolbar.show();
+
+        rows.forEach(function (row) {
+            var iconHtml = row.icon
+                ? '<img src="plugins/EventIcons/icons/material/' + escapeHtml(row.icon) + '.svg" style="width:16px;height:16px;vertical-align:middle" title="' + escapeHtml(row.icon) + '" />'
+                : '<span style="color:#999">{{ 'EventIcons_NoIcon'|translate }}</span>';
+
+            var badge = row.isNew ? ' <span class="label label-success" style="margin-left:4px">{{ 'EventIcons_NewDetected'|translate }}</span>' : '';
+
+            var $tr = $('<tr>').attr('data-key', row.key);
+            $tr.append('<td><input type="checkbox" class="row-checkbox" data-key="' + escapeHtml(row.key) + '" /></td>');
+            $tr.append('<td>' + escapeHtml(row.category) + '</td>');
+            $tr.append('<td>' + escapeHtml(row.action) + badge + '</td>');
+            $tr.append('<td>' + row.occurrences + '</td>');
+            $tr.append('<td class="icon-cell" data-key="' + escapeHtml(row.key) + '" style="cursor:pointer">' + iconHtml + '</td>');
+            $tr.append('<td style="text-align:center"><button class="btn-flat remove-btn" data-key="' + escapeHtml(row.key) + '" title="{{ 'EventIcons_RemoveMapping'|translate }}">&times;</button></td>');
+
+            $tbody.append($tr);
+        });
+
+        bindRowEvents();
+        updateBulkButtons();
+    }
+
+    function bindRowEvents() {
+        $tbody.off('click', '.icon-cell');
+        $tbody.on('click', '.icon-cell', function () {
+            var key = $(this).data('key');
+            openIconPicker(function (iconName) {
+                setCellIcon(key, iconName);
+            });
+        });
+
+        $tbody.off('click', '.remove-btn');
+        $tbody.on('click', '.remove-btn', function () {
+            $(this).closest('tr').remove();
+            updateBulkButtons();
+            if ($tbody.children().length === 0) {
+                $table.hide();
+                $noEvents.show();
+                $saveSection.hide();
+                $bulkToolbar.hide();
+            }
+        });
+
+        $tbody.off('change', '.row-checkbox');
+        $tbody.on('change', '.row-checkbox', updateBulkButtons);
+    }
+
+    function setCellIcon(key, iconName) {
+        var $cell = $tbody.find('.icon-cell[data-key="' + key.replace(/"/g, '&quot;') + '"]');
+        if ($cell.length) {
+            $cell.html('<img src="plugins/EventIcons/icons/material/' + iconName + '.svg" style="width:16px;height:16px;vertical-align:middle" title="' + iconName + '" />');
+        }
+    }
+
+    function openIconPicker(callback) {
+        pendingIconCallback = callback;
+        renderIconGrid($iconSearch.val() || '');
+        $iconModal.modal('open');
+    }
+
+    function renderIconGrid(filter) {
+        $iconGrid.empty();
+        var filtered = iconList;
+        if (filter) {
+            var lf = filter.toLowerCase();
+            filtered = iconList.filter(function (n) { return n.toLowerCase().indexOf(lf) >= 0; });
+        }
+        filtered.forEach(function (name) {
+            var $div = $('<div class="eventicons-icon-item" data-icon="' + name + '">');
+            $div.append('<img src="plugins/EventIcons/icons/material/' + name + '.svg" style="width:24px;height:24px;display:block;margin:0 auto 4px" />');
+            $div.append('<span style="font-size:10px;word-break:break-all">' + name + '</span>');
+            $div.on('click', function () {
+                $('.eventicons-icon-item').removeClass('selected');
+                $(this).addClass('selected');
+                if (pendingIconCallback) {
+                    pendingIconCallback(name);
+                    pendingIconCallback = null;
+                }
+                $iconModal.modal('close');
+            });
+            $iconGrid.append($div);
+        });
+    }
+
+    $iconSearch.on('input', function () {
+        renderIconGrid($(this).val());
+    });
+
+    function updateBulkButtons() {
+        var n = $tbody.find('.row-checkbox:checked').length;
+        $('#bulkAssignBtn').prop('disabled', n === 0);
+        $('#bulkRemoveBtn').prop('disabled', n === 0);
+    }
+
+    $('#selectAllCheckbox, #selectAllCheckboxHeader').on('change', function () {
+        var checked = this.checked;
+        $tbody.find('.row-checkbox').prop('checked', checked);
+        updateBulkButtons();
+    });
+
+    $('#bulkAssignBtn').on('click', function () {
+        var $checked = $tbody.find('.row-checkbox:checked');
+        if (!$checked.length) return;
+        openIconPicker(function (iconName) {
+            $checked.each(function () {
+                var key = $(this).data('key');
+                setCellIcon(key, iconName);
+            });
+        });
+    });
+
+    $('#bulkRemoveBtn').on('click', function () {
+        $tbody.find('.row-checkbox:checked').each(function () {
+            $(this).closest('tr').remove();
+        });
+        updateBulkButtons();
+        if ($tbody.children().length === 0) {
+            $table.hide();
+            $noEvents.show();
+            $saveSection.hide();
+            $bulkToolbar.hide();
+        }
+    });
+
+    $('#saveBtn').on('click', function () {
+        var rows = [];
+        $tbody.find('tr').each(function () {
+            var key = $(this).data('key');
+            var iconName = null;
+            var $img = $(this).find('.icon-cell img');
+            if ($img.length) {
+                var m = $img.attr('src').match(/\/([^\/]+?)\.svg$/);
+                if (m) iconName = m[1];
+            }
+            if (key && iconName) {
+                rows.push({ key: key, icon: iconName });
+            }
+        });
+
+        $saveStatus.show().text('{{ 'General_Saving'|translate }}...');
+
+        $.ajax('index.php?module=EventIcons&action=save', {
+            method: 'POST',
+            dataType: 'json',
+            data: { mapping: JSON.stringify(rows) }
+        }).done(function () {
+            $saveStatus.hide();
+            currentMapping = rows;
+            showNotification('{{ 'EventIcons_Saved'|translate }}', 'success');
+        }).fail(function () {
+            $saveStatus.hide();
+            showNotification('{{ 'EventIcons_SaveError'|translate }}', 'error');
+        });
+    });
+
+    $('#loadEventsBtn').on('click', function () {
+        var idSite = $('#siteSelect').val();
+        if (!idSite) {
+            $loadStatus.show().text('{{ 'General_PleaseSelectASite'|translate }}');
+            return;
+        }
+        $loadStatus.show().text('{{ 'EventIcons_LoadingEvents'|translate }}');
+
+        $.ajax('index.php?module=EventIcons&action=detectEvents', {
+            method: 'GET',
+            dataType: 'json',
+            data: { idSite: idSite }
+        }).done(function (detected) {
+            $loadStatus.hide();
+            if (!Array.isArray(detected)) detected = [];
+            buildTable(currentMapping, detected);
+        }).fail(function () {
+            $loadStatus.hide();
+            showNotification('{{ 'EventIcons_SaveError'|translate }}', 'error');
+        });
+    });
+
+    function showNotification(msg, type) {
+        var cls = type === 'success' ? 'notification-success' : 'notification-error';
+        var $el = $('<div class="notification ' + cls + '">').text(msg);
+        $('.card:last-child .card-content').prepend($el);
+        setTimeout(function () { $el.fadeOut(function () { $el.remove(); }); }, 3000);
+    }
+
+    $iconModal.modal({ dismissible: true });
+
+    buildTable(currentMapping, []);
+})();
+</script>
+{% endblock %}

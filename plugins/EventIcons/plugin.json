@@ -1,0 +1,21 @@
+{
+    "name": "EventIcons",
+    "version": "1.0.0",
+    "description": "Replaces generic event icons in the real-time visitor log with specific icons per event category and action.",
+    "theme": false,
+    "authors": [
+        {
+            "name": "",
+            "email": "",
+            "homepage": ""
+        }
+    ],
+    "license": "GPL v3+",
+    "homepage": "",
+    "require": {
+        "matomo": ">=5.0.0-b1,<6.0.0-b1"
+    },
+    "support": {
+        "issues": ""
+    }
+}

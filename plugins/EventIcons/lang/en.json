@@ -1,0 +1,29 @@
+{
+    "EventIcons": {
+        "AdminMenuTitle": "Event Icons",
+        "AdminDescription": "Assign custom icons to event types. These icons will replace the generic event icon in the real-time visitor log.",
+        "SiteSelection": "Website",
+        "LoadEvents": "Load event types",
+        "LoadingEvents": "Loading event types...",
+        "DetectedEvents": "Detected Event Types",
+        "EventCategory": "Category",
+        "EventAction": "Action",
+        "Occurrences": "Occurrences",
+        "Icon": "Icon",
+        "NoIcon": "No icon",
+        "SelectIcon": "Select icon",
+        "RemoveMapping": "Remove mapping",
+        "Save": "Save selected",
+        "Saved": "Settings saved successfully.",
+        "SaveError": "An error occurred while saving.",
+        "SelectAll": "Select all",
+        "DeselectAll": "Deselect all",
+        "BulkAssign": "Assign to selected",
+        "SearchIcons": "Search icons...",
+        "NoEventsFound": "No events found for the selected period.",
+        "NewDetected": "New",
+        "AlreadyMapped": "Mapped",
+        "IconReplaced": "Icon replaced for %s",
+        "Event": "Event"
+    }
+}

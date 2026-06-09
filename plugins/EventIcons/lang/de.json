@@ -1,0 +1,29 @@
+{
+    "EventIcons": {
+        "AdminMenuTitle": "Event-Icons",
+        "AdminDescription": "Weisen Sie Event-Typen benutzerdefinierte Icons zu. Diese Icons ersetzen das generische Event-Icon in der Live-Besucher-Ansicht.",
+        "SiteSelection": "Website",
+        "LoadEvents": "Event-Typen laden",
+        "LoadingEvents": "Event-Typen werden geladen...",
+        "DetectedEvents": "Erkannte Event-Typen",
+        "EventCategory": "Kategorie",
+        "EventAction": "Aktion",
+        "Occurrences": "Vorkommen",
+        "Icon": "Icon",
+        "NoIcon": "Kein Icon",
+        "SelectIcon": "Icon auswählen",
+        "RemoveMapping": "Zuordnung entfernen",
+        "Save": "Ausgewählte speichern",
+        "Saved": "Einstellungen erfolgreich gespeichert.",
+        "SaveError": "Fehler beim Speichern.",
+        "SelectAll": "Alle auswählen",
+        "DeselectAll": "Auswahl aufheben",
+        "BulkAssign": "Allen Ausgewählten zuweisen",
+        "SearchIcons": "Icons durchsuchen...",
+        "NoEventsFound": "Keine Events im ausgewählten Zeitraum gefunden.",
+        "NewDetected": "Neu",
+        "AlreadyMapped": "Zugewiesen",
+        "IconReplaced": "Icon ersetzt für %s",
+        "Event": "Event"
+    }
+}
