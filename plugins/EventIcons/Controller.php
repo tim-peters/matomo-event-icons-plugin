@@ -7,6 +7,7 @@ use Piwik\Piwik;
 use Piwik\Plugin\ControllerAdmin;
 use Piwik\Plugins\SitesManager\API as SitesManagerAPI;
 
+
 class Controller extends ControllerAdmin
 {
     public function index()
@@ -41,8 +42,7 @@ class Controller extends ControllerAdmin
         $settings->eventIconMapping->setValue($mapping);
         $settings->save();
 
-        Common::sendHeaderJson();
-        return json_encode(['success' => true]);
+        return $this->jsonResponse(['success' => true]);
     }
 
     public function detectEvents()
@@ -50,10 +50,20 @@ class Controller extends ControllerAdmin
         Piwik::checkUserHasSuperUserAccess();
 
         $idSite = Common::getRequestVar('idSite', 0, 'int');
-        $result = API::getInstance()->getDetectedEventTypes($idSite);
 
-        Common::sendHeaderJson();
-        return json_encode($result);
+        try {
+            $result = API::getInstance()->getDetectedEventTypes($idSite);
+        } catch (\Throwable $e) {
+            return $this->jsonResponse(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        }
+
+        return $this->jsonResponse($result);
+    }
+
+    private function jsonResponse($data): string
+    {
+        Common::sendHeader('Content-Type: application/json; charset=utf-8');
+        return json_encode($data);
     }
 
     private function getAvailableIcons()

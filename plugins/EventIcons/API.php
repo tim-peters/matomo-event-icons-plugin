@@ -22,14 +22,17 @@ class API extends PluginApi
         $dateFrom = Date::now()->subDay(self::DAYS_BACK)->toString();
         $dateTo = Date::now()->toString();
 
+        $logLinkVisitAction = Common::prefixTable('log_link_visit_action');
+        $logAction = Common::prefixTable('log_action');
+
         $sql = "
             SELECT
                 cat.name AS category,
                 act.name AS action,
                 COUNT(*) AS occurrences
-            FROM {log_link_visit_action} lva
-            INNER JOIN {log_action} cat ON lva.idaction_event_category = cat.idaction
-            INNER JOIN {log_action} act ON lva.idaction_event_action = act.idaction
+            FROM $logLinkVisitAction lva
+            INNER JOIN $logAction cat ON lva.idaction_event_category = cat.idaction
+            INNER JOIN $logAction act ON lva.idaction_event_action = act.idaction
             WHERE lva.server_time >= ?
               AND lva.server_time <= ?
               AND lva.idsite = ?
@@ -55,6 +58,33 @@ class API extends PluginApi
         }
 
         return $events;
+    }
+
+    public function debugTest(int $idSite): array
+    {
+        $logLinkVisitAction = Common::prefixTable('log_link_visit_action');
+        $logAction = Common::prefixTable('log_action');
+
+        $sql = "
+            SELECT
+                cat.name AS category,
+                act.name AS action,
+                COUNT(*) AS occurrences
+            FROM $logLinkVisitAction lva
+            INNER JOIN $logAction cat ON lva.idaction_event_category = cat.idaction
+            INNER JOIN $logAction act ON lva.idaction_event_action = act.idaction
+            WHERE lva.idsite = ?
+            GROUP BY cat.name, act.name
+            ORDER BY occurrences DESC
+            LIMIT " . self::MAX_RESULTS . "
+        ";
+
+        try {
+            $rows = Db::fetchAll($sql, [(int)$idSite]);
+            return ['success' => true, 'count' => count($rows), 'data' => $rows];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'error' => $e->getMessage(), 'sql' => $sql];
+        }
     }
 
     public function getIconMapping(): array

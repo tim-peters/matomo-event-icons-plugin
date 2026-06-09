@@ -112,14 +112,14 @@
     height: 24px;
 }
 </style>
-{% endblock %}
 
-{% block footer %}
-{{ parent() }}
 <script>
 (function () {
+    console.log('[EventIcons] Settings page loaded');
     var currentMapping = {{ mapping|raw }};
     var iconList = {{ iconList|raw }};
+    console.log('[EventIcons] currentMapping:', currentMapping);
+    console.log('[EventIcons] iconList count:', iconList.length);
     var $ = jQuery;
 
     var $table = $('#eventIconsTable');
@@ -348,23 +348,40 @@
 
     $('#loadEventsBtn').on('click', function () {
         var idSite = $('#siteSelect').val();
+        console.log('[EventIcons] Load button clicked, idSite:', idSite);
         if (!idSite) {
             $loadStatus.show().text('{{ 'General_PleaseSelectASite'|translate }}');
             return;
         }
         $loadStatus.show().text('{{ 'EventIcons_LoadingEvents'|translate }}');
 
-        $.ajax('index.php?module=EventIcons&action=detectEvents', {
+        var url = 'index.php?module=EventIcons&action=detectEvents&idSite=' + idSite + '&period=day&date=today';
+        console.log('[EventIcons] AJAX URL:', url);
+
+        $.ajax(url, {
             method: 'GET',
-            dataType: 'json',
-            data: { idSite: idSite }
-        }).done(function (detected) {
+            dataType: 'json'
+        }).done(function (response) {
+            console.log('[EventIcons] AJAX response:', response);
             $loadStatus.hide();
-            if (!Array.isArray(detected)) detected = [];
-            buildTable(currentMapping, detected);
-        }).fail(function () {
+            if (response && response.error) {
+                console.error('[EventIcons] Server error:', response.error, response.trace);
+                showNotification('Server: ' + response.error, 'error');
+                return;
+            }
+            if (response && response.success === true && Array.isArray(response.data)) {
+                buildTable(currentMapping, response.data);
+                return;
+            }
+            if (!Array.isArray(response)) {
+                console.warn('[EventIcons] Unexpected response type:', typeof response);
+                response = [];
+            }
+            buildTable(currentMapping, response);
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            console.error('[EventIcons] AJAX fail:', textStatus, errorThrown, jqXHR.responseText);
             $loadStatus.hide();
-            showNotification('{{ 'EventIcons_SaveError'|translate }}', 'error');
+            showNotification('AJAX Error: ' + textStatus, 'error');
         });
     });
 
