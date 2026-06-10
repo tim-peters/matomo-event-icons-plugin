@@ -7,7 +7,6 @@ use Piwik\Piwik;
 use Piwik\Plugin\ControllerAdmin;
 use Piwik\Plugins\SitesManager\API as SitesManagerAPI;
 
-
 class Controller extends ControllerAdmin
 {
     public function index()
@@ -57,6 +56,56 @@ class Controller extends ControllerAdmin
         }
 
         return $this->jsonResponse($result);
+    }
+
+    public function getVisitActionTimes()
+    {
+        Piwik::checkUserHasSuperUserAccess();
+
+        $idVisit = Common::getRequestVar('idVisit', 0, 'int');
+        $idSite = Common::getRequestVar('idSite', 0, 'int');
+
+        if (!$idVisit || !$idSite) {
+            return $this->jsonResponse([]);
+        }
+
+        try {
+            $sql = "SELECT server_time, time_spent_ref_action
+                    FROM " . Common::prefixTable('log_link_visit_action') . "
+                    WHERE idvisit = ?
+                    ORDER BY server_time ASC";
+            $rows = \Piwik\Db::get()->fetchAll($sql, [$idVisit]);
+
+            $actions = [];
+            foreach ($rows as $row) {
+                $timeSpent = $row['time_spent_ref_action'];
+                $timeSpentInt = (int)$timeSpent;
+                $actions[] = [
+                    'serverTimePretty' => date('H:i:s', strtotime($row['server_time'])),
+                    'timeSpentPretty' => $timeSpentInt ? $this->formatTimeSpent($timeSpentInt) : null,
+                    'timeSpentSeconds' => $timeSpentInt ?: null,
+                ];
+            }
+
+            return $this->jsonResponse($actions);
+        } catch (\Throwable $e) {
+            return $this->jsonResponse([]);
+        }
+    }
+
+    private function formatTimeSpent(int $seconds): string
+    {
+        if ($seconds < 60) {
+            return $seconds . 's';
+        }
+        $minutes = intdiv($seconds, 60);
+        $secs = $seconds % 60;
+        if ($minutes < 60) {
+            return $minutes . ' min' . ($secs ? ' ' . $secs . 's' : '');
+        }
+        $hours = intdiv($minutes, 60);
+        $mins = $minutes % 60;
+        return $hours . 'h ' . $mins . ' min';
     }
 
     private function jsonResponse($data): string

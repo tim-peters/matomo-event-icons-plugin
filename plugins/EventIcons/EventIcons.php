@@ -47,6 +47,6 @@ class EventIcons extends Plugin
     public function getClientSideTranslationKeys(&$translationKeys)
     {
         $translationKeys[] = 'EventIcons_IconReplaced';
-        $translationKeys[] = 'EventIcons_Event';
+        $translationKeys[] = 'General_TimeOnPage';
     }
 }

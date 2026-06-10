@@ -5,6 +5,7 @@ namespace Piwik\Plugins\EventIcons;
 use Piwik\Common;
 use Piwik\Date;
 use Piwik\Db;
+use Piwik\Piwik;
 use Piwik\Plugin\API as PluginApi;
 use Piwik\Plugins\EventIcons\Settings\SystemSettings;
 
@@ -58,6 +59,53 @@ class API extends PluginApi
         }
 
         return $events;
+    }
+
+    public function getVisitActionTimes(int $idVisit, int $idSite): array
+    {
+        Piwik::checkUserHasViewAccess($idSite);
+
+        if ($idVisit <= 0) {
+            return [];
+        }
+
+        try {
+            $sql = "SELECT server_time, time_spent_ref_action
+                    FROM " . Common::prefixTable('log_link_visit_action') . "
+                    WHERE idvisit = ?
+                    ORDER BY server_time ASC";
+            $rows = Db::fetchAll($sql, [$idVisit]);
+
+            $actions = [];
+            foreach ($rows as $row) {
+                $timeSpent = $row['time_spent_ref_action'];
+                $timeSpentInt = (int)$timeSpent;
+                $actions[] = [
+                    'serverTimePretty' => date('H:i:s', strtotime($row['server_time'])),
+                    'timeSpentPretty' => $timeSpentInt ? $this->formatTimeSpent($timeSpentInt) : null,
+                    'timeSpentSeconds' => $timeSpentInt ?: null,
+                ];
+            }
+
+            return $actions;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    private function formatTimeSpent(int $seconds): string
+    {
+        if ($seconds < 60) {
+            return $seconds . 's';
+        }
+        $minutes = intdiv($seconds, 60);
+        $secs = $seconds % 60;
+        if ($minutes < 60) {
+            return $minutes . ' min' . ($secs ? ' ' . $secs . 's' : '');
+        }
+        $hours = intdiv($minutes, 60);
+        $mins = $minutes % 60;
+        return $hours . 'h ' . $mins . ' min';
     }
 
     public function debugTest(int $idSite): array
