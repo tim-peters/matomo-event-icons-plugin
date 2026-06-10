@@ -1,21 +1,23 @@
 {
     "name": "EventIcons",
     "version": "1.0.0",
-    "description": "Replaces generic event icons in the real-time visitor log with specific icons per event category and action.",
+    "description": "Replace generic event icons in the visitor log and live widget with specific Material Design icons per category and action.",
     "theme": false,
     "authors": [
         {
-            "name": "",
-            "email": "",
-            "homepage": ""
+            "name": "Tim Peters",
+            "homepage": "https://www.timjpeters.com"
         }
     ],
-    "license": "GPL v3+",
+    "license": "GPL-3.0+",
+    "keywords": ["events", "icons", "material-design", "live-widget", "visitor-log"],
     "homepage": "",
     "require": {
-        "matomo": ">=5.0.0-b1,<6.0.0-b1"
+        "matomo": ">=5.0.0-b1,<6.0.0-b1",
+        "php": ">=8.0.21"
     },
     "support": {
         "issues": ""
-    }
+    },
+    "category": "customisation"
 }
