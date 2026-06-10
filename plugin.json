@@ -6,6 +6,7 @@
     "authors": [
         {
             "name": "Tim Peters",
+            "email": "dev@timjpeters.com",
             "homepage": "https://www.timjpeters.com"
         }
     ],
@@ -17,7 +18,8 @@
         "php": ">=8.0.21"
     },
     "support": {
-        "issues": ""
+        "issues": "https://github.com/tim-peters/matomo-event-icons-plugin/issues",
+        "source": "https://github.com/tim-peters/matomo-event-icons-plugin"
     },
     "category": "customisation"
 }
