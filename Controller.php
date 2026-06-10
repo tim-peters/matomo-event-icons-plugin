@@ -147,7 +147,11 @@ class Controller extends ControllerAdmin
             $paths = [];
             return $paths;
         }
-        $paths = json_decode(file_get_contents($jsonFile), true) ?: [];
+        $raw = json_decode(file_get_contents($jsonFile), true) ?: [];
+        $paths = [];
+        foreach ($raw as $key => $value) {
+            $paths[(string)$key] = $value;
+        }
         return $paths;
     }
 
@@ -155,6 +159,7 @@ class Controller extends ControllerAdmin
     {
         $paths = $this->loadIconPaths();
         $icons = array_keys($paths);
+        $icons = array_map('\strval', $icons);
         sort($icons);
         return $icons;
     }

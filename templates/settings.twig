@@ -134,8 +134,8 @@
     function getIconNameFromImg(img) {
         var src = $(img).attr('src');
         if (!src) return null;
-        var m = src.match(/\/([^\/]+?)\.svg$/);
-        return m ? m[1] : null;
+        var m = src.match(/[?&]name=([^&]+?)\.svg(?:$|&)/);
+        return m ? decodeURIComponent(m[1]) : null;
     }
 
     function buildTable(mapping, detected) {
@@ -256,6 +256,7 @@
             filtered = iconList.filter(function (n) { return n.toLowerCase().indexOf(lf) >= 0; });
         }
         filtered.forEach(function (name) {
+            name = String(name);
             var $div = $('<div class="eventicons-icon-item" data-icon="' + name + '">');
             $div.append('<img src="index.php?module=EventIcons&action=icon&name=' + name + '.svg" style="width:24px;height:24px;display:block;margin:0 auto 4px" />');
             $div.append('<span style="font-size:10px;word-break:break-all">' + name + '</span>');
@@ -319,8 +320,7 @@
             var iconName = null;
             var $img = $(this).find('.icon-cell img');
             if ($img.length) {
-                var m = $img.attr('src').match(/\/([^\/]+?)\.svg$/);
-                if (m) iconName = m[1];
+                iconName = getIconNameFromImg($img[0]);
             }
             if (key && iconName) {
                 rows.push({ key: key, icon: iconName });

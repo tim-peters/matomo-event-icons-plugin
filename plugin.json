@@ -1,6 +1,6 @@
 {
     "name": "EventIcons",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Replace generic event icons in the visitor log and live widget with specific Material Design icons per category and action.",
     "theme": false,
     "authors": [
@@ -15,7 +15,7 @@
     "homepage": "",
     "require": {
         "matomo": ">=5.0.0-b1,<6.0.0-b1",
-        "php": ">=8.0.21"
+        "php": ">=7.0.0"
     },
     "support": {
         "issues": "https://github.com/tim-peters/matomo-event-icons-plugin/issues",
